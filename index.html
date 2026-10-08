@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+    <title>Ultimate Draft</title>
+    <style>
+        :root { --bg: #0b0f19; --card: #161f32; --acc: #00ff87; --txt: #fff; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui; }
+        body { background: var(--bg); color: var(--txt); padding: 15px; display: flex; justify-content: center; }
+        .box { width: 100%; max-width: 500px; background: var(--card); border-radius: 12px; padding: 15px; }
+        h1, h2, h3 { text-align: center; margin-bottom: 10px; }
+        h1 { color: var(--acc); font-size: 22px; }
+        .hidden { display: none; }
+        input, select { width: 100%; padding: 10px; background: #0b0f19; border: 1px solid #2e3f5e; border-radius: 8px; color: white; margin-bottom: 10px; font-size: 15px; }
+        .btn { width: 100%; padding: 12px; background: var(--acc); color: #0b0f19; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .bar { display: flex; justify-content: space-between; background: #0b0f19; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; }
+        .pool { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .card { background: #1e293b; border: 2px solid #2e3f5e; border-radius: 8px; padding: 8px; text-align: center; cursor: pointer; }
+        .card:hover { border-color: var(--acc); }
+        .ovr { font-size: 20px; font-weight: bold; color: var(--acc); }
+        .pitch { background: #142a17; border: 2px solid #2e4d32; border-radius: 12px; min-height: 250px; margin: 15px 0; display: flex; flex-direction: column; justify-content: space-around; padding: 10px; }
+        .row { display: flex; justify-content: space-around; width: 100%; }
+        .p-slot { background: rgba(255,255,255,0.1); border: 1px dashed white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; text-align: center; font-weight: bold; color: white; }
+        .p-slot.filled { background: var(--acc); color: #0b0f19; border-style: solid; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <div id="s1">
+        <h1>Ultimate Draft</h1>
+        <input type="text" id="name" value="Galácticos FC">
+        <select id="bud"><option value="120">💰 \$120M (Fácil)</option><option value="100" selected>💰 \$100M (Normal)</option></select>
+        <button class="btn" onclick="start()">Comenzar Draft</button>
+    </div>
+    <div id="s2" class="hidden">
+        <h2 id="t-title"></h2>
+        <div class="bar"><div>Presupuesto: <span id="s-bud" style="color:#ffcd00;"></span></div><div>OVR: <span id="s-ovr" style="color:var(--acc);">0</span></div></div>
+        <div class="pool" id="p-pool"></div>
+        <div class="pitch" id="pitch"></div>
+        <button id="b-tour" class="btn hidden" onclick="startTour()">Jugar Torneo</button>
+    </div>
+    <div id="s3" class="hidden">
+        <h2>Copa Ultimate Draft</h2>
+        <div class="bar" style="justify-content:space-around;"><div id="mA"></div><div id="mS" style="font-size:18px;color:var(--acc)">0 - 0</div><div id="mB"></div></div>
+        <p id="tick" style="text-align:center;font-style:italic;margin-bottom:10px;"></p>
+        <button class="btn" id="b-sim" onclick="sim()">Simular Partido</button>
+    </div>
+</div>
+<script>
+    let st = { name: "Galácticos FC", bud: 100, round: 1, picked: [], ovr: 0, stage: 0 };
+    const db = ["Mbappé", "Vinícius", "Haaland", "Messi", "Bellingham", "De Bruyne", "Rodri", "Salah", "Musiala", "Kane", "Yamal", "Van Dijk", "Courtois", "Cristiano Ronaldo", "Neymar Jr", "Zidane", "Ronaldinho", "Ronaldo Nazário"];
+    function start() {
+        st.name = document.getElementById('name').value; st.bud = parseFloat(document.getElementById('bud').value);
+        document.getElementById('s1').classList.add('hidden'); document.getElementById('s2').classList.remove('hidden');
+        document.getElementById('t-title').innerText = st.name;
+        const p = document.getElementById('pitch'); p.innerHTML = '';
+        [["DEL","DEL","DEL"],["MC","MC","MC"],["DFC","DFC","DFC"],["POR"]].forEach(r => {
+            let row = document.createElement('div'); row.className = 'row';
+            r.forEach(pos => { let d = document.createElement('div'); d.className = 'p-slot'; d.id = 'sl-'+p.querySelectorAll('.p-slot').length; d.innerText = pos; row.appendChild(d); });
+            p.appendChild(row);
+        });
+        gen(); update();
+    }
+    function gen() {
+        const c = document.getElementById('p-pool'); c.innerHTML = '';
+        for (let i=0; i<3; i++) {
+            let o = Math.floor(Math.random()*16)+82, n = db[Math.floor(Math.random()*db.length)], pr = (o*0.11).toFixed(1);
+            let div = document.createElement('div'); div.className = 'card'; div.innerHTML = `<div class="ovr">${o}</div><div style="font-size:11px; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:120px;">${n}</div><div>$${pr}M</div>`;
+            div.onclick = () => { if(st.bud>=pr){ st.bud-=pr; st.picked.push({n,o}); let s = document.getElementById('sl-'+(st.picked.length-1)); s.classList.add('filled'); s.innerText = n; if(st.round<10){st.round++; gen();}else{document.getElementById('p-pool').classList.add('hidden'); document.getElementById('b-tour').classList.remove('hidden');} st.ovr = Math.round(st.picked.reduce((a,b)=>a+b.o,0)/st.picked.length); update(); }else{alert("Falta dinero");} };
+            c.appendChild(div);
+        }
+    }
+    function update() { document.getElementById('s-bud').innerText = `$${st.bud.toFixed(1)}M`; document.getElementById('s-ovr').innerText = st.ovr; }
+    function startTour() { document.getElementById('s2').classList.add('hidden'); document.getElementById('s3').classList.remove('hidden'); nextM(); }
+    function nextM() { document.getElementById('mA').innerText = `${st.name} (${st.ovr})`; document.getElementById('mB').innerText = `Rival FC (${st.ovr+1})`; document.getElementById('mS').innerText = "0 - 0"; document.getElementById('tick').innerText = "¡Silbato inicial!"; }
+    function sim() { let a = Math.floor(Math.random()*4)+1, b = Math.floor(Math.random()*3); document.getElementById('mS').innerText = `${a} - ${b}`; if(a>b){ document.getElementById('tick').innerText = "¡CAMPEONES! Has ganado el torneo."; document.getElementById('b-sim').innerText = "Jugar de nuevo"; document.getElementById('b-sim').onclick = () => location.reload(); }else{ document.getElementById('tick').innerText = "Eliminado del torneo."; document.getElementById('b-sim').innerText = "Reintentar"; document.getElementById('b-sim').onclick = () => location.reload(); } }
+</script>
+</body>
+</html>
